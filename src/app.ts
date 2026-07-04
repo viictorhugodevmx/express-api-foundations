@@ -3,6 +3,8 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
+import { productRoutes } from './modules/products/product.routes';
+
 export const app = express();
 
 app.use(helmet());
@@ -17,3 +19,5 @@ app.get('/api/health', (_request, response) => {
     timestamp: new Date().toISOString()
   });
 });
+
+app.use('/api/products', productRoutes);
