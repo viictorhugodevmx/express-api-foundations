@@ -1,5 +1,5 @@
 import { products } from './product.data';
-import type { CreateProductInput, Product } from './product.types';
+import type { CreateProductInput, Product, UpdateProductInput } from './product.types';
 
 interface GetProductsFilters {
   category?: string;
@@ -65,4 +65,64 @@ export function createProduct(input: CreateProductInput): Product {
   products.push(product);
 
   return product;
+}
+
+export function updateProductById(id: string, input: UpdateProductInput): Product | null {
+  const productIndex = products.findIndex((product) => product.id === id);
+
+  if (productIndex === -1) {
+    return null;
+  }
+
+  const currentProduct = products[productIndex];
+
+  const nextName = input.name !== undefined
+    ? input.name.trim()
+    : currentProduct.name;
+
+  const nextCategory = input.category !== undefined
+    ? input.category.trim().toLowerCase()
+    : currentProduct.category;
+
+  const nextPrice = input.price !== undefined
+    ? input.price
+    : currentProduct.price;
+
+  const nextStock = input.stock !== undefined
+    ? input.stock
+    : currentProduct.stock;
+
+  const nextActive = input.active !== undefined
+    ? input.active
+    : currentProduct.active;
+
+  if (!nextName) {
+    throw new Error('Product name is required');
+  }
+
+  if (!nextCategory) {
+    throw new Error('Product category is required');
+  }
+
+  if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
+    throw new Error('Product price must be greater than 0');
+  }
+
+  if (!Number.isInteger(nextStock) || nextStock < 0) {
+    throw new Error('Product stock must be 0 or greater');
+  }
+
+  const updatedProduct: Product = {
+    ...currentProduct,
+    name: nextName,
+    category: nextCategory,
+    price: nextPrice,
+    stock: nextStock,
+    active: nextActive,
+    updatedAt: new Date().toISOString()
+  };
+
+  products[productIndex] = updatedProduct;
+
+  return updatedProduct;
 }

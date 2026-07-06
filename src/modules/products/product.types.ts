@@ -6,6 +6,7 @@ export interface Product {
   stock: number;
   active: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CreateProductInput {
@@ -13,4 +14,12 @@ export interface CreateProductInput {
   category: string;
   price: number;
   stock: number;
+}
+
+export interface UpdateProductInput {
+  name?: string;
+  category?: string;
+  price?: number;
+  stock?: number;
+  active?: boolean;
 }

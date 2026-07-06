@@ -1,7 +1,12 @@
 import { Router } from 'express';
 
-import { createProduct, getProductById, getProducts } from './product.service';
-import type { CreateProductInput } from './product.types';
+import {
+  createProduct,
+  getProductById,
+  getProducts,
+  updateProductById
+} from './product.service';
+import type { CreateProductInput, UpdateProductInput } from './product.types';
 
 export const productRoutes = Router();
 
@@ -50,6 +55,61 @@ function parseCreateProductInput(body: unknown): CreateProductInput {
     price: candidate.price,
     stock: candidate.stock
   };
+}
+
+function parseUpdateProductInput(body: unknown): UpdateProductInput {
+  if (!body || typeof body !== 'object') {
+    throw new Error('Request body is required');
+  }
+
+  const candidate = body as Record<string, unknown>;
+  const input: UpdateProductInput = {};
+
+  if (candidate.name !== undefined) {
+    if (typeof candidate.name !== 'string') {
+      throw new Error('Product name must be a string');
+    }
+
+    input.name = candidate.name;
+  }
+
+  if (candidate.category !== undefined) {
+    if (typeof candidate.category !== 'string') {
+      throw new Error('Product category must be a string');
+    }
+
+    input.category = candidate.category;
+  }
+
+  if (candidate.price !== undefined) {
+    if (typeof candidate.price !== 'number') {
+      throw new Error('Product price must be a number');
+    }
+
+    input.price = candidate.price;
+  }
+
+  if (candidate.stock !== undefined) {
+    if (typeof candidate.stock !== 'number') {
+      throw new Error('Product stock must be a number');
+    }
+
+    input.stock = candidate.stock;
+  }
+
+  if (candidate.active !== undefined) {
+    if (typeof candidate.active !== 'boolean') {
+      throw new Error('Product active must be a boolean');
+    }
+
+    input.active = candidate.active;
+  }
+
+  if (Object.keys(input).length === 0) {
+    throw new Error('At least one field is required');
+  }
+
+  return input;
 }
 
 productRoutes.get('/', (request, response) => {
@@ -109,4 +169,27 @@ productRoutes.get('/:id', (request, response) => {
   }
 
   response.status(200).json(product);
+});
+
+productRoutes.patch('/:id', (request, response) => {
+  try {
+    const { id } = request.params;
+    const input = parseUpdateProductInput(request.body);
+    const product = updateProductById(id, input);
+
+    if (!product) {
+      response.status(404).json({
+        message: 'Product not found'
+      });
+      return;
+    }
+
+    response.status(200).json(product);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unexpected products error';
+
+    response.status(400).json({
+      message
+    });
+  }
 });
