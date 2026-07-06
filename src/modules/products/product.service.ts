@@ -126,3 +126,15 @@ export function updateProductById(id: string, input: UpdateProductInput): Produc
 
   return updatedProduct;
 }
+
+export function deleteProductById(id: string): Product | null {
+  const productIndex = products.findIndex((product) => product.id === id);
+
+  if (productIndex === -1) {
+    return null;
+  }
+
+  const [deletedProduct] = products.splice(productIndex, 1);
+
+  return deletedProduct;
+}

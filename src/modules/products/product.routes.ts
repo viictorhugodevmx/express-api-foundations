@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import {
   createProduct,
+  deleteProductById,
   getProductById,
   getProducts,
   updateProductById
@@ -192,4 +193,21 @@ productRoutes.patch('/:id', (request, response) => {
       message
     });
   }
+});
+
+productRoutes.delete('/:id', (request, response) => {
+  const { id } = request.params;
+  const product = deleteProductById(id);
+
+  if (!product) {
+    response.status(404).json({
+      message: 'Product not found'
+    });
+    return;
+  }
+
+  response.status(200).json({
+    message: 'Product deleted successfully',
+    product
+  });
 });
