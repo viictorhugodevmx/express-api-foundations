@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import { productRoutes } from './modules/products/product.routes';
+import { errorMiddleware } from './shared/middlewares/error.middleware';
 
 export const app = express();
 
@@ -21,3 +22,5 @@ app.get('/api/health', (_request, response) => {
 });
 
 app.use('/api/products', productRoutes);
+
+app.use(errorMiddleware);

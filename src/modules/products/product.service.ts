@@ -1,3 +1,4 @@
+import { AppError } from '../../shared/errors/app-error';
 import { products } from './product.data';
 import type { CreateProductInput, Product, UpdateProductInput } from './product.types';
 
@@ -26,10 +27,14 @@ export function getProducts(filters: GetProductsFilters = {}): Product[] {
   return filteredProducts;
 }
 
-export function getProductById(id: string): Product | null {
+export function getProductById(id: string): Product {
   const product = products.find((currentProduct) => currentProduct.id === id);
 
-  return product ?? null;
+  if (!product) {
+    throw new AppError('Product not found', 404);
+  }
+
+  return product;
 }
 
 export function createProduct(input: CreateProductInput): Product {
@@ -37,19 +42,19 @@ export function createProduct(input: CreateProductInput): Product {
   const normalizedCategory = input.category.trim().toLowerCase();
 
   if (!normalizedName) {
-    throw new Error('Product name is required');
+    throw new AppError('Product name is required', 400);
   }
 
   if (!normalizedCategory) {
-    throw new Error('Product category is required');
+    throw new AppError('Product category is required', 400);
   }
 
   if (!Number.isFinite(input.price) || input.price <= 0) {
-    throw new Error('Product price must be greater than 0');
+    throw new AppError('Product price must be greater than 0', 400);
   }
 
   if (!Number.isInteger(input.stock) || input.stock < 0) {
-    throw new Error('Product stock must be 0 or greater');
+    throw new AppError('Product stock must be 0 or greater', 400);
   }
 
   const product: Product = {
@@ -67,11 +72,11 @@ export function createProduct(input: CreateProductInput): Product {
   return product;
 }
 
-export function updateProductById(id: string, input: UpdateProductInput): Product | null {
+export function updateProductById(id: string, input: UpdateProductInput): Product {
   const productIndex = products.findIndex((product) => product.id === id);
 
   if (productIndex === -1) {
-    return null;
+    throw new AppError('Product not found', 404);
   }
 
   const currentProduct = products[productIndex];
@@ -97,19 +102,19 @@ export function updateProductById(id: string, input: UpdateProductInput): Produc
     : currentProduct.active;
 
   if (!nextName) {
-    throw new Error('Product name is required');
+    throw new AppError('Product name is required', 400);
   }
 
   if (!nextCategory) {
-    throw new Error('Product category is required');
+    throw new AppError('Product category is required', 400);
   }
 
   if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
-    throw new Error('Product price must be greater than 0');
+    throw new AppError('Product price must be greater than 0', 400);
   }
 
   if (!Number.isInteger(nextStock) || nextStock < 0) {
-    throw new Error('Product stock must be 0 or greater');
+    throw new AppError('Product stock must be 0 or greater', 400);
   }
 
   const updatedProduct: Product = {
@@ -127,11 +132,11 @@ export function updateProductById(id: string, input: UpdateProductInput): Produc
   return updatedProduct;
 }
 
-export function deleteProductById(id: string): Product | null {
+export function deleteProductById(id: string): Product {
   const productIndex = products.findIndex((product) => product.id === id);
 
   if (productIndex === -1) {
-    return null;
+    throw new AppError('Product not found', 404);
   }
 
   const [deletedProduct] = products.splice(productIndex, 1);

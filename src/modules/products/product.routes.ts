@@ -1,5 +1,7 @@
 import { Router } from 'express';
 
+import { AppError } from '../../shared/errors/app-error';
+import { asyncHandler } from '../../shared/utils/async-handler';
 import {
   createProduct,
   deleteProductById,
@@ -24,30 +26,38 @@ function parseActiveQuery(value: unknown): boolean | undefined {
     return false;
   }
 
-  throw new Error('Invalid active filter. Use true or false');
+  throw new AppError('Invalid active filter. Use true or false', 400);
+}
+
+function getIdParam(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new AppError('Product id must be a string', 400);
+  }
+
+  return value;
 }
 
 function parseCreateProductInput(body: unknown): CreateProductInput {
   if (!body || typeof body !== 'object') {
-    throw new Error('Request body is required');
+    throw new AppError('Request body is required', 400);
   }
 
   const candidate = body as Record<string, unknown>;
 
   if (typeof candidate.name !== 'string') {
-    throw new Error('Product name must be a string');
+    throw new AppError('Product name must be a string', 400);
   }
 
   if (typeof candidate.category !== 'string') {
-    throw new Error('Product category must be a string');
+    throw new AppError('Product category must be a string', 400);
   }
 
   if (typeof candidate.price !== 'number') {
-    throw new Error('Product price must be a number');
+    throw new AppError('Product price must be a number', 400);
   }
 
   if (typeof candidate.stock !== 'number') {
-    throw new Error('Product stock must be a number');
+    throw new AppError('Product stock must be a number', 400);
   }
 
   return {
@@ -60,7 +70,7 @@ function parseCreateProductInput(body: unknown): CreateProductInput {
 
 function parseUpdateProductInput(body: unknown): UpdateProductInput {
   if (!body || typeof body !== 'object') {
-    throw new Error('Request body is required');
+    throw new AppError('Request body is required', 400);
   }
 
   const candidate = body as Record<string, unknown>;
@@ -68,7 +78,7 @@ function parseUpdateProductInput(body: unknown): UpdateProductInput {
 
   if (candidate.name !== undefined) {
     if (typeof candidate.name !== 'string') {
-      throw new Error('Product name must be a string');
+      throw new AppError('Product name must be a string', 400);
     }
 
     input.name = candidate.name;
@@ -76,7 +86,7 @@ function parseUpdateProductInput(body: unknown): UpdateProductInput {
 
   if (candidate.category !== undefined) {
     if (typeof candidate.category !== 'string') {
-      throw new Error('Product category must be a string');
+      throw new AppError('Product category must be a string', 400);
     }
 
     input.category = candidate.category;
@@ -84,7 +94,7 @@ function parseUpdateProductInput(body: unknown): UpdateProductInput {
 
   if (candidate.price !== undefined) {
     if (typeof candidate.price !== 'number') {
-      throw new Error('Product price must be a number');
+      throw new AppError('Product price must be a number', 400);
     }
 
     input.price = candidate.price;
@@ -92,7 +102,7 @@ function parseUpdateProductInput(body: unknown): UpdateProductInput {
 
   if (candidate.stock !== undefined) {
     if (typeof candidate.stock !== 'number') {
-      throw new Error('Product stock must be a number');
+      throw new AppError('Product stock must be a number', 400);
     }
 
     input.stock = candidate.stock;
@@ -100,114 +110,69 @@ function parseUpdateProductInput(body: unknown): UpdateProductInput {
 
   if (candidate.active !== undefined) {
     if (typeof candidate.active !== 'boolean') {
-      throw new Error('Product active must be a boolean');
+      throw new AppError('Product active must be a boolean', 400);
     }
 
     input.active = candidate.active;
   }
 
   if (Object.keys(input).length === 0) {
-    throw new Error('At least one field is required');
+    throw new AppError('At least one field is required', 400);
   }
 
   return input;
 }
 
-productRoutes.get('/', (request, response) => {
-  try {
-    const category = typeof request.query.category === 'string'
-      ? request.query.category
-      : undefined;
+productRoutes.get('/', asyncHandler((request, response) => {
+  const category = typeof request.query.category === 'string'
+    ? request.query.category
+    : undefined;
 
-    const active = parseActiveQuery(request.query.active);
+  const active = parseActiveQuery(request.query.active);
 
-    const products = getProducts({
-      category,
-      active
-    });
+  const products = getProducts({
+    category,
+    active
+  });
 
-    response.status(200).json({
-      total: products.length,
-      filters: {
-        category: category ?? null,
-        active: active ?? null
-      },
-      items: products
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected products error';
+  response.status(200).json({
+    total: products.length,
+    filters: {
+      category: category ?? null,
+      active: active ?? null
+    },
+    items: products
+  });
+}));
 
-    response.status(400).json({
-      message
-    });
-  }
-});
+productRoutes.post('/', asyncHandler((request, response) => {
+  const input = parseCreateProductInput(request.body);
+  const product = createProduct(input);
 
-productRoutes.post('/', (request, response) => {
-  try {
-    const input = parseCreateProductInput(request.body);
-    const product = createProduct(input);
+  response.status(201).json(product);
+}));
 
-    response.status(201).json(product);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected products error';
-
-    response.status(400).json({
-      message
-    });
-  }
-});
-
-productRoutes.get('/:id', (request, response) => {
-  const { id } = request.params;
+productRoutes.get('/:id', asyncHandler((request, response) => {
+  const id = getIdParam(request.params.id);
   const product = getProductById(id);
 
-  if (!product) {
-    response.status(404).json({
-      message: 'Product not found'
-    });
-    return;
-  }
+  response.status(200).json(product);
+}));
+
+productRoutes.patch('/:id', asyncHandler((request, response) => {
+  const id = getIdParam(request.params.id);
+  const input = parseUpdateProductInput(request.body);
+  const product = updateProductById(id, input);
 
   response.status(200).json(product);
-});
+}));
 
-productRoutes.patch('/:id', (request, response) => {
-  try {
-    const { id } = request.params;
-    const input = parseUpdateProductInput(request.body);
-    const product = updateProductById(id, input);
-
-    if (!product) {
-      response.status(404).json({
-        message: 'Product not found'
-      });
-      return;
-    }
-
-    response.status(200).json(product);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected products error';
-
-    response.status(400).json({
-      message
-    });
-  }
-});
-
-productRoutes.delete('/:id', (request, response) => {
-  const { id } = request.params;
+productRoutes.delete('/:id', asyncHandler((request, response) => {
+  const id = getIdParam(request.params.id);
   const product = deleteProductById(id);
-
-  if (!product) {
-    response.status(404).json({
-      message: 'Product not found'
-    });
-    return;
-  }
 
   response.status(200).json({
     message: 'Product deleted successfully',
     product
   });
-});
+}));
