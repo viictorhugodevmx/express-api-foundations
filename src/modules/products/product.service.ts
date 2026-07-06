@@ -7,6 +7,21 @@ interface GetProductsFilters {
   active?: boolean;
 }
 
+interface CategorySummary {
+  category: string;
+  totalProducts: number;
+  totalStock: number;
+}
+
+interface ProductStatsSummary {
+  totalProducts: number;
+  activeProducts: number;
+  inactiveProducts: number;
+  totalStock: number;
+  totalInventoryValue: number;
+  categories: CategorySummary[];
+}
+
 export function getProducts(filters: GetProductsFilters = {}): Product[] {
   let filteredProducts = [...products];
 
@@ -25,6 +40,46 @@ export function getProducts(filters: GetProductsFilters = {}): Product[] {
   }
 
   return filteredProducts;
+}
+
+export function getProductsStatsSummary(): ProductStatsSummary {
+  const categoryMap = new Map<string, CategorySummary>();
+
+  let activeProducts = 0;
+  let inactiveProducts = 0;
+  let totalStock = 0;
+  let totalInventoryValue = 0;
+
+  for (const product of products) {
+    if (product.active) {
+      activeProducts += 1;
+    } else {
+      inactiveProducts += 1;
+    }
+
+    totalStock += product.stock;
+    totalInventoryValue += product.price * product.stock;
+
+    const currentCategory = categoryMap.get(product.category) ?? {
+      category: product.category,
+      totalProducts: 0,
+      totalStock: 0
+    };
+
+    currentCategory.totalProducts += 1;
+    currentCategory.totalStock += product.stock;
+
+    categoryMap.set(product.category, currentCategory);
+  }
+
+  return {
+    totalProducts: products.length,
+    activeProducts,
+    inactiveProducts,
+    totalStock,
+    totalInventoryValue,
+    categories: Array.from(categoryMap.values())
+  };
 }
 
 export function getProductById(id: string): Product {

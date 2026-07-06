@@ -7,6 +7,7 @@ import {
   deleteProductById,
   getProductById,
   getProducts,
+  getProductsStatsSummary,
   updateProductById
 } from './product.service';
 import type { CreateProductInput, UpdateProductInput } from './product.types';
@@ -150,6 +151,12 @@ productRoutes.post('/', asyncHandler((request, response) => {
   const product = createProduct(input);
 
   response.status(201).json(product);
+}));
+
+productRoutes.get('/stats/summary', asyncHandler((_request, response) => {
+  const summary = getProductsStatsSummary();
+
+  response.status(200).json(summary);
 }));
 
 productRoutes.get('/:id', asyncHandler((request, response) => {
