@@ -1,5 +1,5 @@
 import { products } from './product.data';
-import type { Product } from './product.types';
+import type { CreateProductInput, Product } from './product.types';
 
 interface GetProductsFilters {
   category?: string;
@@ -30,4 +30,39 @@ export function getProductById(id: string): Product | null {
   const product = products.find((currentProduct) => currentProduct.id === id);
 
   return product ?? null;
+}
+
+export function createProduct(input: CreateProductInput): Product {
+  const normalizedName = input.name.trim();
+  const normalizedCategory = input.category.trim().toLowerCase();
+
+  if (!normalizedName) {
+    throw new Error('Product name is required');
+  }
+
+  if (!normalizedCategory) {
+    throw new Error('Product category is required');
+  }
+
+  if (!Number.isFinite(input.price) || input.price <= 0) {
+    throw new Error('Product price must be greater than 0');
+  }
+
+  if (!Number.isInteger(input.stock) || input.stock < 0) {
+    throw new Error('Product stock must be 0 or greater');
+  }
+
+  const product: Product = {
+    id: crypto.randomUUID(),
+    name: normalizedName,
+    category: normalizedCategory,
+    price: input.price,
+    stock: input.stock,
+    active: true,
+    createdAt: new Date().toISOString()
+  };
+
+  products.push(product);
+
+  return product;
 }
