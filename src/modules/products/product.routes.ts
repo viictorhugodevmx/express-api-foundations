@@ -30,6 +30,28 @@ function parseActiveQuery(value: unknown): boolean | undefined {
   throw new AppError('Invalid active filter. Use true or false', 400);
 }
 
+function parsePositiveIntegerQuery(
+  value: unknown,
+  fieldName: string,
+  defaultValue: number
+): number {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  if (typeof value !== 'string') {
+    throw new AppError(`${fieldName} must be a number`, 400);
+  }
+
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    throw new AppError(`${fieldName} must be a positive integer`, 400);
+  }
+
+  return parsedValue;
+}
+
 function getIdParam(value: unknown): string {
   if (typeof value !== 'string') {
     throw new AppError('Product id must be a string', 400);
@@ -130,19 +152,22 @@ productRoutes.get('/', asyncHandler((request, response) => {
     : undefined;
 
   const active = parseActiveQuery(request.query.active);
+  const page = parsePositiveIntegerQuery(request.query.page, 'page', 1);
+  const limit = parsePositiveIntegerQuery(request.query.limit, 'limit', 10);
 
-  const products = getProducts({
+  const result = getProducts({
     category,
-    active
+    active,
+    page,
+    limit
   });
 
   response.status(200).json({
-    total: products.length,
+    ...result,
     filters: {
       category: category ?? null,
       active: active ?? null
-    },
-    items: products
+    }
   });
 }));
 

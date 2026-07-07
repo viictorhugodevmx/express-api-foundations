@@ -7,6 +7,21 @@ interface GetProductsFilters {
   active?: boolean;
 }
 
+interface GetProductsOptions extends GetProductsFilters {
+  page: number;
+  limit: number;
+}
+
+interface PaginatedProducts {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  items: Product[];
+}
+
 interface CategorySummary {
   category: string;
   totalProducts: number;
@@ -22,8 +37,8 @@ interface ProductStatsSummary {
   categories: CategorySummary[];
 }
 
-export function getProducts(filters: GetProductsFilters = {}): Product[] {
-  let filteredProducts = [...products];
+function applyProductFilters(productList: Product[], filters: GetProductsFilters): Product[] {
+  let filteredProducts = [...productList];
 
   if (filters.category) {
     const normalizedCategory = filters.category.trim().toLowerCase();
@@ -40,6 +55,29 @@ export function getProducts(filters: GetProductsFilters = {}): Product[] {
   }
 
   return filteredProducts;
+}
+
+export function getProducts(options: GetProductsOptions): PaginatedProducts {
+  const filteredProducts = applyProductFilters(products, {
+    category: options.category,
+    active: options.active
+  });
+
+  const total = filteredProducts.length;
+  const totalPages = Math.ceil(total / options.limit);
+  const startIndex = (options.page - 1) * options.limit;
+  const endIndex = startIndex + options.limit;
+  const items = filteredProducts.slice(startIndex, endIndex);
+
+  return {
+    total,
+    page: options.page,
+    limit: options.limit,
+    totalPages,
+    hasNextPage: options.page < totalPages,
+    hasPreviousPage: options.page > 1,
+    items
+  };
 }
 
 export function getProductsStatsSummary(): ProductStatsSummary {
