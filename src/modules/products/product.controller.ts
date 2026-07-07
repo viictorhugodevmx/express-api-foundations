@@ -2,6 +2,10 @@ import type { Request, Response } from 'express';
 
 import { AppError } from '../../shared/errors/app-error';
 import {
+  parsePositiveIntegerQuery,
+  parseStringParam
+} from '../../shared/http/request-parsers';
+import {
   createProduct,
   deleteProductById,
   getProductById,
@@ -28,28 +32,6 @@ function parseActiveQuery(value: unknown): boolean | undefined {
   }
 
   throw new AppError('Invalid active filter. Use true or false', 400);
-}
-
-function parsePositiveIntegerQuery(
-  value: unknown,
-  fieldName: string,
-  defaultValue: number
-): number {
-  if (value === undefined) {
-    return defaultValue;
-  }
-
-  if (typeof value !== 'string') {
-    throw new AppError(`${fieldName} must be a number`, 400);
-  }
-
-  const parsedValue = Number(value);
-
-  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
-    throw new AppError(`${fieldName} must be a positive integer`, 400);
-  }
-
-  return parsedValue;
 }
 
 function parseSortByQuery(value: unknown): ProductSortField {
@@ -90,14 +72,6 @@ function parseDirectionQuery(value: unknown): SortDirection {
   }
 
   throw new AppError('Invalid direction. Use: asc or desc', 400);
-}
-
-function getIdParam(value: unknown): string {
-  if (typeof value !== 'string') {
-    throw new AppError('Product id must be a string', 400);
-  }
-
-  return value;
 }
 
 function parseCreateProductInput(body: unknown): CreateProductInput {
@@ -229,14 +203,14 @@ export function getProductsStatsSummaryController(_request: Request, response: R
 }
 
 export function getProductByIdController(request: Request, response: Response): void {
-  const id = getIdParam(request.params.id);
+  const id = parseStringParam(request.params.id, 'Product id');
   const product = getProductById(id);
 
   response.status(200).json(product);
 }
 
 export function updateProductByIdController(request: Request, response: Response): void {
-  const id = getIdParam(request.params.id);
+  const id = parseStringParam(request.params.id, 'Product id');
   const input = parseUpdateProductInput(request.body);
   const product = updateProductById(id, input);
 
@@ -244,7 +218,7 @@ export function updateProductByIdController(request: Request, response: Response
 }
 
 export function deleteProductByIdController(request: Request, response: Response): void {
-  const id = getIdParam(request.params.id);
+  const id = parseStringParam(request.params.id, 'Product id');
   const product = deleteProductById(id);
 
   response.status(200).json({
