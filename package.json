@@ -1,34 +1,35 @@
 {
-  "name": "express-api-foundations",
+  "name": "app-02-express-api-foundations",
   "version": "1.0.0",
-  "description": "Express API foundations with Node.js and TypeScript.",
+  "description": "Express API foundations with TypeScript, CRUD, filters, pagination, sorting and centralized error handling.",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "smoke:test": "./scripts/smoke-test.sh"
   },
   "keywords": [
     "node",
     "express",
-    "api",
     "typescript",
+    "api",
     "backend"
   ],
-  "author": "",
+  "author": "Victor Hugo Segundo Aguilar",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^5.2.1",
+    "express": "^5.1.0",
     "helmet": "^8.1.0",
     "morgan": "^1.10.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
+    "@types/express": "^5.0.3",
     "@types/morgan": "^1.9.10",
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.1.0",
     "ts-node-dev": "^2.0.0",
-    "typescript": "5.9.3"
+    "typescript": "^5.9.3"
   }
 }
