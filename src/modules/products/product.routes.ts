@@ -14,6 +14,9 @@ import type { CreateProductInput, UpdateProductInput } from './product.types';
 
 export const productRoutes = Router();
 
+type ProductSortField = 'name' | 'category' | 'price' | 'stock' | 'createdAt';
+type SortDirection = 'asc' | 'desc';
+
 function parseActiveQuery(value: unknown): boolean | undefined {
   if (value === undefined) {
     return undefined;
@@ -50,6 +53,46 @@ function parsePositiveIntegerQuery(
   }
 
   return parsedValue;
+}
+
+function parseSortByQuery(value: unknown): ProductSortField {
+  if (value === undefined) {
+    return 'createdAt';
+  }
+
+  if (typeof value !== 'string') {
+    throw new AppError('sortBy must be a string', 400);
+  }
+
+  const allowedFields: ProductSortField[] = [
+    'name',
+    'category',
+    'price',
+    'stock',
+    'createdAt'
+  ];
+
+  if (!allowedFields.includes(value as ProductSortField)) {
+    throw new AppError('Invalid sortBy. Use: name, category, price, stock or createdAt', 400);
+  }
+
+  return value as ProductSortField;
+}
+
+function parseDirectionQuery(value: unknown): SortDirection {
+  if (value === undefined) {
+    return 'asc';
+  }
+
+  if (value === 'asc') {
+    return 'asc';
+  }
+
+  if (value === 'desc') {
+    return 'desc';
+  }
+
+  throw new AppError('Invalid direction. Use: asc or desc', 400);
 }
 
 function getIdParam(value: unknown): string {
@@ -154,12 +197,16 @@ productRoutes.get('/', asyncHandler((request, response) => {
   const active = parseActiveQuery(request.query.active);
   const page = parsePositiveIntegerQuery(request.query.page, 'page', 1);
   const limit = parsePositiveIntegerQuery(request.query.limit, 'limit', 10);
+  const sortBy = parseSortByQuery(request.query.sortBy);
+  const direction = parseDirectionQuery(request.query.direction);
 
   const result = getProducts({
     category,
     active,
     page,
-    limit
+    limit,
+    sortBy,
+    direction
   });
 
   response.status(200).json({

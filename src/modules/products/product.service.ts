@@ -2,6 +2,9 @@ import { AppError } from '../../shared/errors/app-error';
 import { products } from './product.data';
 import type { CreateProductInput, Product, UpdateProductInput } from './product.types';
 
+type ProductSortField = 'name' | 'category' | 'price' | 'stock' | 'createdAt';
+type SortDirection = 'asc' | 'desc';
+
 interface GetProductsFilters {
   category?: string;
   active?: boolean;
@@ -10,6 +13,8 @@ interface GetProductsFilters {
 interface GetProductsOptions extends GetProductsFilters {
   page: number;
   limit: number;
+  sortBy: ProductSortField;
+  direction: SortDirection;
 }
 
 interface PaginatedProducts {
@@ -19,6 +24,8 @@ interface PaginatedProducts {
   totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  sortBy: ProductSortField;
+  direction: SortDirection;
   items: Product[];
 }
 
@@ -57,17 +64,44 @@ function applyProductFilters(productList: Product[], filters: GetProductsFilters
   return filteredProducts;
 }
 
+function sortProductList(
+  productList: Product[],
+  sortBy: ProductSortField,
+  direction: SortDirection
+): Product[] {
+  return [...productList].sort((firstProduct, secondProduct) => {
+    const firstValue = firstProduct[sortBy];
+    const secondValue = secondProduct[sortBy];
+
+    if (typeof firstValue === 'number' && typeof secondValue === 'number') {
+      const result = firstValue - secondValue;
+
+      return direction === 'asc' ? result : result * -1;
+    }
+
+    const result = String(firstValue).localeCompare(String(secondValue));
+
+    return direction === 'asc' ? result : result * -1;
+  });
+}
+
 export function getProducts(options: GetProductsOptions): PaginatedProducts {
   const filteredProducts = applyProductFilters(products, {
     category: options.category,
     active: options.active
   });
 
-  const total = filteredProducts.length;
+  const sortedProducts = sortProductList(
+    filteredProducts,
+    options.sortBy,
+    options.direction
+  );
+
+  const total = sortedProducts.length;
   const totalPages = Math.ceil(total / options.limit);
   const startIndex = (options.page - 1) * options.limit;
   const endIndex = startIndex + options.limit;
-  const items = filteredProducts.slice(startIndex, endIndex);
+  const items = sortedProducts.slice(startIndex, endIndex);
 
   return {
     total,
@@ -76,6 +110,8 @@ export function getProducts(options: GetProductsOptions): PaginatedProducts {
     totalPages,
     hasNextPage: options.page < totalPages,
     hasPreviousPage: options.page > 1,
+    sortBy: options.sortBy,
+    direction: options.direction,
     items
   };
 }
@@ -147,7 +183,7 @@ export function createProduct(input: CreateProductInput): Product {
   }
 
   if (!Number.isInteger(input.stock) || input.stock < 0) {
-    throw new AppError('Product stock must be 0 or greater', 400);
+    throw new AppError('Product stock must be 0 or greater');
   }
 
   const product: Product = {
